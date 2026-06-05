@@ -1,4 +1,6 @@
 {
   "outputDirectory": ".",
-  "buildCommand": null
+  "routes": [
+    { "src": "/", "dest": "/dashboard.html" }
+  ]
 }
