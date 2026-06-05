@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard Inversiones · Jun–Dic 2026</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1/dist/chart.umd.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0f1117;
+      --surface:   #1a1d27;
+      --surface2:  #22263a;
+      --border:    rgba(255,255,255,0.07);
+      --text:      #e2e8f0;
+      --muted:     #8892a4;
+      --green:     #4ade80;
+      --green-dim: rgba(74,222,128,0.12);
+      --orange:    #fb923c;
+      --orange-dim:rgba(251,146,60,0.12);
+      --blue:      #60a5fa;
+      --purple:    #a78bfa;
+      --accent:    #6366f1;
+      --red:       #f87171;
+      --red-dim:   rgba(248,113,113,0.12);
+      --yellow:    #facc15;
+    }
+
+    body { font-family: 'Inter', system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; padding: 24px; }
+
+    /* HEADER */
+    header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 28px; }
+    .header-left h1 { font-size: 1.45rem; font-weight: 700; letter-spacing: -0.02em; }
+    .header-left .sub { font-size: 0.78rem; color: var(--muted); margin-top: 3px; display: flex; gap: 10px; flex-wrap: wrap; }
+    .header-left .sub span { background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 2px 8px; }
+    .header-right { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .toggle-group { display: flex; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+    .toggle-group button { background: none; border: none; color: var(--muted); padding: 6px 16px; font-size: 0.8rem; cursor: pointer; transition: background .15s, color .15s; }
+    .toggle-group button.active { background: var(--accent); color: #fff; }
+    .btn { background: var(--accent); color: #fff; border: none; border-radius: 8px; padding: 8px 16px; font-size: 0.82rem; font-weight: 600; cursor: pointer; transition: opacity .2s; }
+    .btn:hover { opacity: .85; }
+
+    /* CARDS */
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 18px 20px; }
+    .card-title { font-size: 0.7rem; text-transform: uppercase; letter-spacing: .09em; color: var(--muted); margin-bottom: 10px; font-weight: 600; }
+
+    /* KPI GRID */
+    .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(185px, 1fr)); gap: 14px; margin-bottom: 24px; }
+    .kpi-value { font-size: 1.6rem; font-weight: 700; letter-spacing: -0.03em; line-height: 1; }
+    .kpi-value.green  { color: var(--green); }
+    .kpi-value.orange { color: var(--orange); }
+    .kpi-value.blue   { color: var(--blue); }
+    .kpi-value.red    { color: var(--red); }
+    .kpi-sub { font-size: 0.74rem; color: var(--muted); margin-top: 6px; }
+    .kpi-badge { display: inline-block; margin-top: 8px; padding: 2px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 600; }
+    .kpi-badge.green  { background: var(--green-dim);  color: var(--green); }
+    .kpi-badge.orange { background: var(--orange-dim); color: var(--orange); }
+    .kpi-badge.blue   { background: rgba(96,165,250,.12); color: var(--blue); }
+    .kpi-badge.red    { background: var(--red-dim);    color: var(--red); }
+
+    /* INPUTS — FCI */
+    .inputs-section { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 18px 20px; margin-bottom: 18px; }
+    .inputs-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+    .inputs-header h2 { font-size: 0.78rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
+    .tna-note { font-size: 0.7rem; color: var(--orange); background: var(--orange-dim); border-radius: 6px; padding: 2px 8px; }
+
+    .fund-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+    .fund-table thead th { text-align: left; padding: 6px 10px; font-size: 0.68rem; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); border-bottom: 1px solid var(--border); }
+    .fund-table tbody tr { border-bottom: 1px solid var(--border); }
+    .fund-table tbody tr:last-child { border-bottom: none; }
+    .fund-table tbody td { padding: 8px 10px; vertical-align: middle; }
+    .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
+    .fund-table input[type="number"] { background: var(--bg); border: 1px solid var(--border); border-radius: 7px; color: var(--text); padding: 5px 8px; font-size: 0.82rem; text-align: right; width: 100%; }
+    .fund-table input[type="number"]:focus { outline: none; border-color: var(--accent); }
+    .col-amount { width: 155px; }
+    .col-tna    { width: 85px; }
+    .col-pct    { width: 75px; text-align: right; color: var(--muted); font-size: 0.75rem; }
+
+    /* INPUTS — ACCIONES */
+    .stocks-section { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 18px 20px; margin-bottom: 18px; }
+    .stocks-section h2 { font-size: 0.78rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; margin-bottom: 14px; }
+    .stock-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+    .stock-table thead th { text-align: left; padding: 6px 10px; font-size: 0.68rem; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); border-bottom: 1px solid var(--border); }
+    .stock-table tbody tr { border-bottom: 1px solid var(--border); }
+    .stock-table tbody tr:last-child { border-bottom: none; }
+    .stock-table tbody td { padding: 9px 10px; vertical-align: middle; }
+    .stock-table input[type="number"] { background: var(--bg); border: 1px solid var(--border); border-radius: 7px; color: var(--text); padding: 5px 8px; font-size: 0.82rem; text-align: right; width: 100%; }
+    .stock-table input[type="number"]:focus { outline: none; border-color: var(--accent); }
+    .col-qty    { width: 70px; }
+    .col-price  { width: 130px; }
+    .col-cur    { width: 130px; }
+    .col-val    { width: 130px; font-weight: 600; }
+    .col-pnl    { width: 110px; font-weight: 600; }
+    .pnl-pos    { color: var(--green); }
+    .pnl-neg    { color: var(--red); }
+
+    .usd-row { display: flex; align-items: center; gap: 10px; margin-top: 14px; flex-wrap: wrap; border-top: 1px solid var(--border); padding-top: 14px; }
+    .usd-row label { font-size: 0.8rem; color: var(--muted); }
+    .usd-row input { width: 130px; background: var(--bg); border: 1px solid var(--border); border-radius: 7px; color: var(--text); padding: 5px 8px; font-size: 0.82rem; text-align: right; }
+    .usd-row input:focus { outline: none; border-color: var(--accent); }
+
+    /* CHARTS */
+    .charts-grid        { display: grid; grid-template-columns: 1fr 2fr; gap: 14px; margin-bottom: 24px; }
+    .charts-grid-bottom { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 24px; }
+    @media (max-width: 860px) { .charts-grid, .charts-grid-bottom { grid-template-columns: 1fr; } }
+    .chart-wrap      { position: relative; height: 230px; }
+    .chart-wrap-tall { position: relative; height: 270px; }
+
+    /* TABLE MOV */
+    .table-wrapper { overflow-x: auto; }
+    table.mov-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+    table.mov-table thead th { text-align: left; padding: 9px 14px; font-size: 0.68rem; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); border-bottom: 1px solid var(--border); }
+    table.mov-table tbody tr { border-bottom: 1px solid var(--border); transition: background .1s; }
+    table.mov-table tbody tr:last-child { border-bottom: none; }
+    table.mov-table tbody tr:hover { background: var(--surface2); }
+    table.mov-table tbody td { padding: 10px 14px; }
+    .pill { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 600; }
+    .pill-green  { background: var(--green-dim);  color: var(--green); }
+    .pill-orange { background: var(--orange-dim); color: var(--orange); }
+    .pill-blue   { background: rgba(96,165,250,.12); color: var(--blue); }
+
+    @media print {
+      body { background: #fff; color: #000; padding: 0; }
+      .card, .inputs-section, .stocks-section { border: 1px solid #ccc; background: #fff; }
+      .btn, .toggle-group { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="header-left">
+    <h1>Portfolio Personal · Uala + Acciones</h1>
+    <div class="sub">
+      <span>Inicio: 5 Jun 2026</span>
+      <span>Horizonte FCI: 6 meses</span>
+      <span>Perfil: Medio</span>
+      <span id="last-update">Actualizado: —</span>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="toggle-group">
+      <button id="btn-ars" class="active" onclick="setCurrency('ARS')">ARS</button>
+      <button id="btn-usd" onclick="setCurrency('USD')">USD</button>
+    </div>
+    <button class="btn" onclick="window.print()">⬇ PDF</button>
+  </div>
+</header>
+
+<!-- FCI INPUTS -->
+<div class="inputs-section">
+  <div class="inputs-header">
+    <h2>FCI Uala · Montos y TNAs</h2>
+    <span class="tna-note">⚠ Actualizá las TNAs desde la app Uala antes de proyectar</span>
+  </div>
+  <table class="fund-table">
+    <thead>
+      <tr>
+        <th></th><th>Fondo</th>
+        <th class="col-amount">Monto (ARS)</th>
+        <th class="col-tna">TNA %</th>
+        <th class="col-pct">% cartera</th>
+      </tr>
+    </thead>
+    <tbody id="fund-rows"></tbody>
+  </table>
+  <div class="usd-row">
+    <label>Tipo de cambio USD/ARS:</label>
+    <input type="number" id="inp-tc" value="1200" min="1" step="10" oninput="recalculate()" />
+  </div>
+</div>
+
+<!-- ACCIONES INPUTS -->
+<div class="stocks-section">
+  <h2>Acciones · Seguimiento de precio</h2>
+  <table class="stock-table">
+    <thead>
+      <tr>
+        <th></th>
+        <th>Ticker</th>
+        <th>Empresa</th>
+        <th class="col-qty">Cantidad</th>
+        <th class="col-price">Precio compra (ARS)</th>
+        <th class="col-cur">Precio actual (ARS)</th>
+        <th class="col-val">Valor actual</th>
+        <th class="col-pnl">P&amp;L</th>
+      </tr>
+    </thead>
+    <tbody id="stock-rows"></tbody>
+  </table>
+</div>
+
+<!-- KPIs -->
+<div class="kpi-grid">
+  <div class="card">
+    <div class="card-title">Capital total</div>
+    <div class="kpi-value" id="kpi-capital">—</div>
+    <div class="kpi-sub" id="kpi-capital-sub">FCI + Acciones</div>
+  </div>
+  <div class="card">
+    <div class="card-title">Proyección FCI · 5 Dic 2026</div>
+    <div class="kpi-value green" id="kpi-proj6">—</div>
+    <div class="kpi-sub">Ganancia estimada (6 meses)</div>
+    <span class="kpi-badge green" id="kpi-proj6-gain">+$0</span>
+  </div>
+  <div class="card">
+    <div class="card-title">Rendimiento mensual est.</div>
+    <div class="kpi-value green" id="kpi-mes">—</div>
+    <div class="kpi-sub">Primer mes (Jun → Jul)</div>
+    <span class="kpi-badge green" id="kpi-mes-pct">+0%</span>
+  </div>
+  <div class="card">
+    <div class="card-title">TNA ponderada FCI</div>
+    <div class="kpi-value orange" id="kpi-tna">—</div>
+    <div class="kpi-sub">Promedio ponderado por monto</div>
+    <span class="kpi-badge orange">Perfil medio</span>
+  </div>
+  <div class="card">
+    <div class="card-title">YPF · P&amp;L</div>
+    <div class="kpi-value" id="kpi-ypf-val">—</div>
+    <div class="kpi-sub" id="kpi-ypf-sub">1 acción · compra $83.000</div>
+    <span class="kpi-badge" id="kpi-ypf-badge">—</span>
+  </div>
+</div>
+
+<!-- CHARTS ROW 1 -->
+<div class="charts-grid">
+  <div class="card">
+    <div class="card-title">Distribución del portfolio</div>
+    <div class="chart-wrap"><canvas id="chart-donut"></canvas></div>
+  </div>
+  <div class="card">
+    <div class="card-title">Proyección FCI · Jun → Dic 2026</div>
+    <div class="chart-wrap-tall"><canvas id="chart-line"></canvas></div>
+  </div>
+</div>
+
+<!-- CHARTS ROW 2 -->
+<div class="charts-grid-bottom">
+  <div class="card">
+    <div class="card-title">TNA por fondo FCI</div>
+    <div class="chart-wrap"><canvas id="chart-bars"></canvas></div>
+  </div>
+  <div class="card">
+    <div class="card-title">Evolución real (historial)</div>
+    <div class="chart-wrap"><canvas id="chart-history"></canvas></div>
+  </div>
+</div>
+
+<!-- MOVIMIENTOS -->
+<div class="card">
+  <div class="card-title" style="margin-bottom:16px;">Movimientos</div>
+  <div class="table-wrapper">
+    <table class="mov-table">
+      <thead>
+        <tr>
+          <th>Fecha</th><th>Instrumento</th><th>Tipo</th>
+          <th>Monto (ARS)</th><th>Saldo acumulado</th>
+        </tr>
+      </thead>
+      <tbody id="mov-body"></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════
+   CONFIG
+═══════════════════════════════════════ */
+const START_DATE  = new Date('2026-06-05');
+const HORIZON_MOS = 6;
+
+const FUNDS = [
+  { id: 'retorno',   label: 'Retorno Plus',     tna: 0.44, color: '#6366f1', amount: 510000 },
+  { id: 'ahorro',    label: 'Ahorro Plus',       tna: 0.28, color: '#4ade80', amount: 450000 },
+  { id: 'cobertura', label: 'Cobertura Plus',    tna: 0.29, color: '#fb923c', amount: 248000 },
+  { id: 'mm',        label: '24/7 Money Market', tna: 0.26, color: '#a78bfa', amount: 140000 },
+];
+
+const STOCKS = [
+  { id: 'ypf', ticker: 'YPF', company: 'YPF S.A.', qty: 1, buyPrice: 83000, curPrice: 83000, color: '#facc15' },
+];
+
+let currency = 'ARS';
+
+/* ═══════════════════════════════════════
+   HELPERS
+═══════════════════════════════════════ */
+function addMonths(date, n) {
+  const d = new Date(date);
+  d.setMonth(d.getMonth() + n);
+  return d;
+}
+
+function tc() { return parseFloat(document.getElementById('inp-tc').value) || 1200; }
+
+function fmt(n) {
+  if (currency === 'USD') return 'USD ' + Math.round(n / tc()).toLocaleString('es-AR');
+  return '$' + Math.round(n).toLocaleString('es-AR');
+}
+
+function getFunds() {
+  return FUNDS.map(f => ({
+    ...f,
+    amount: parseFloat(document.getElementById('inp-amount-' + f.id).value) || 0,
+    tna:    (parseFloat(document.getElementById('inp-tna-' + f.id).value) || 0) / 100,
+  })).filter(f => f.amount > 0);
+}
+
+function getStocks() {
+  return STOCKS.map(s => ({
+    ...s,
+    qty:      parseFloat(document.getElementById('inp-qty-'     + s.id).value) || 0,
+    buyPrice: parseFloat(document.getElementById('inp-buy-'     + s.id).value) || 0,
+    curPrice: parseFloat(document.getElementById('inp-cur-'     + s.id).value) || 0,
+  }));
+}
+
+function weightedTNA(funds) {
+  const total = funds.reduce((s, f) => s + f.amount, 0);
+  if (!total) return 0;
+  return funds.reduce((s, f) => s + (f.amount / total) * f.tna, 0);
+}
+
+function projectSeries(principal, annualRate, months) {
+  const mr = Math.pow(1 + annualRate, 1 / 12) - 1;
+  const out = [principal];
+  for (let m = 1; m <= months; m++) out.push(out[out.length - 1] * (1 + mr));
+  return out;
+}
+
+/* ═══════════════════════════════════════
+   BUILD ROWS
+═══════════════════════════════════════ */
+function buildFundRows() {
+  const tbody = document.getElementById('fund-rows');
+  tbody.innerHTML = FUNDS.map(f => {
+    const fciTotal = FUNDS.reduce((s, x) => s + x.amount, 0);
+    const pct = fciTotal > 0 ? ((f.amount / fciTotal) * 100).toFixed(1) : '0.0';
+    return `
+    <tr>
+      <td><span class="dot" style="background:${f.color}"></span></td>
+      <td style="font-size:.82rem">${f.label}</td>
+      <td class="col-amount"><input type="number" id="inp-amount-${f.id}" value="${f.amount}" min="0" step="1000" oninput="recalculate()" /></td>
+      <td class="col-tna"><input type="number" id="inp-tna-${f.id}" value="${(f.tna*100).toFixed(1)}" min="0" max="200" step="0.1" oninput="recalculate()" /></td>
+      <td class="col-pct" id="pct-${f.id}">${pct}%</td>
+    </tr>`;
+  }).join('');
+}
+
+function buildStockRows() {
+  const tbody = document.getElementById('stock-rows');
+  tbody.innerHTML = STOCKS.map(s => {
+    const val = s.qty * s.curPrice;
+    const pnl = val - (s.qty * s.buyPrice);
+    const pnlPct = s.buyPrice > 0 ? ((s.curPrice / s.buyPrice - 1) * 100).toFixed(2) : '0.00';
+    const cls = pnl >= 0 ? 'pnl-pos' : 'pnl-neg';
+    const sign = pnl >= 0 ? '+' : '';
+    return `
+    <tr>
+      <td><span class="dot" style="background:${s.color}"></span></td>
+      <td><strong>${s.ticker}</strong></td>
+      <td style="color:var(--muted);font-size:.8rem">${s.company}</td>
+      <td class="col-qty"><input type="number" id="inp-qty-${s.id}" value="${s.qty}" min="0" step="1" oninput="recalculate()" /></td>
+      <td class="col-price"><input type="number" id="inp-buy-${s.id}" value="${s.buyPrice}" min="0" step="100" oninput="recalculate()" /></td>
+      <td class="col-cur"><input type="number" id="inp-cur-${s.id}" value="${s.curPrice}" min="0" step="100" oninput="recalculate()" /></td>
+      <td class="col-val" id="val-${s.id}">$${Math.round(val).toLocaleString('es-AR')}</td>
+      <td class="col-pnl ${cls}" id="pnl-${s.id}">${sign}$${Math.round(pnl).toLocaleString('es-AR')} (${sign}${pnlPct}%)</td>
+    </tr>`;
+  }).join('');
+}
+
+function buildMovements() {
+  const rows = [
+    { date: '05 jun 2026', inst: 'Retorno Plus',      tipo: 'FCI',    amount: 510000 },
+    { date: '05 jun 2026', inst: 'Ahorro Plus',        tipo: 'FCI',    amount: 450000 },
+    { date: '05 jun 2026', inst: 'Cobertura Plus',     tipo: 'FCI',    amount: 248000 },
+    { date: '05 jun 2026', inst: '24/7 Money Market',  tipo: 'FCI',    amount: 140000 },
+    { date: '05 jun 2026', inst: 'YPF (1 acción)',     tipo: 'Acción', amount: 83000  },
+  ];
+  let acum = 0;
+  document.getElementById('mov-body').innerHTML = rows.map(r => {
+    acum += r.amount;
+    const pillClass = r.tipo === 'Acción' ? 'pill-blue' : 'pill-green';
+    return `
+    <tr>
+      <td>${r.date}</td>
+      <td>${r.inst}</td>
+      <td><span class="pill ${pillClass}">Suscripción</span></td>
+      <td>$${r.amount.toLocaleString('es-AR')}</td>
+      <td>$${acum.toLocaleString('es-AR')}</td>
+    </tr>`;
+  }).join('');
+}
+
+/* ═══════════════════════════════════════
+   CHARTS
+═══════════════════════════════════════ */
+Chart.defaults.color = '#8892a4';
+Chart.defaults.borderColor = 'rgba(255,255,255,0.05)';
+Chart.defaults.font.family = "'Inter', system-ui, sans-serif";
+
+let chartDonut, chartLine, chartBars, chartHistory;
+
+function initCharts() {
+  chartDonut = new Chart(document.getElementById('chart-donut'), {
+    type: 'doughnut',
+    data: { labels: [], datasets: [{ data: [], backgroundColor: [], borderWidth: 2, borderColor: '#1a1d27', hoverOffset: 6 }] },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'bottom', labels: { boxWidth: 11, padding: 10, font: { size: 10 } } },
+        tooltip: { callbacks: { label: ctx => ' ' + ctx.label + ': ' + (ctx.parsed * 100).toFixed(1) + '%' } }
+      },
+      cutout: '62%',
+    }
+  });
+
+  const monthLabels = Array.from({ length: HORIZON_MOS + 1 }, (_, i) =>
+    addMonths(START_DATE, i).toLocaleDateString('es-AR', { day: '2-digit', month: 'short' })
+  );
+
+  chartLine = new Chart(document.getElementById('chart-line'), {
+    type: 'line',
+    data: {
+      labels: monthLabels,
+      datasets: [
+        { label: 'Conservador (−15%)', data: [], borderColor: '#fb923c', backgroundColor: 'rgba(251,146,60,0.04)', borderWidth: 1.5, borderDash: [4,3], pointRadius: 0, fill: false },
+        { label: 'Base',               data: [], borderColor: '#4ade80', backgroundColor: 'rgba(74,222,128,0.07)', borderWidth: 2, pointRadius: 3, pointBackgroundColor: '#4ade80', fill: true },
+        { label: 'Optimista (+15%)',   data: [], borderColor: '#60a5fa', backgroundColor: 'rgba(96,165,250,0.04)', borderWidth: 1.5, borderDash: [4,3], pointRadius: 0, fill: false },
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      scales: {
+        x: { grid: { display: false } },
+        y: { ticks: { callback: v => currency === 'USD' ? 'U$S ' + Math.round(v / tc()) : '$' + (v/1000).toFixed(0) + 'k' } }
+      },
+      plugins: { legend: { labels: { boxWidth: 11, padding: 12, font: { size: 11 } } } }
+    }
+  });
+
+  chartBars = new Chart(document.getElementById('chart-bars'), {
+    type: 'bar',
+    data: {
+      labels: FUNDS.map(f => f.label),
+      datasets: [{ label: 'TNA %', data: FUNDS.map(f => +(f.tna*100).toFixed(1)), backgroundColor: FUNDS.map(f => f.color + 'bb'), borderColor: FUNDS.map(f => f.color), borderWidth: 1.5, borderRadius: 6 }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      scales: { x: { grid: { display: false }, ticks: { font: { size: 9 } } }, y: { ticks: { callback: v => v + '%' }, max: 70 } },
+      plugins: { legend: { display: false } }
+    }
+  });
+
+  const histLabels = Array.from({ length: HORIZON_MOS + 1 }, (_, i) =>
+    addMonths(START_DATE, i).toLocaleDateString('es-AR', { day: '2-digit', month: 'short' })
+  );
+
+  chartHistory = new Chart(document.getElementById('chart-history'), {
+    type: 'line',
+    data: {
+      labels: histLabels,
+      datasets: [{
+        label: 'Capital real ($)',
+        data: [1431000, null, null, null, null, null, null],
+        borderColor: '#a78bfa', backgroundColor: 'rgba(167,139,250,0.08)',
+        borderWidth: 2, pointRadius: 5, pointBackgroundColor: '#a78bfa',
+        fill: true, tension: 0.35, spanGaps: false,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      scales: { x: { grid: { display: false } }, y: { ticks: { callback: v => v == null ? '' : '$' + (v/1000).toFixed(0) + 'k' } } },
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ctx.raw == null ? 'Sin datos' : '$' + Math.round(ctx.raw).toLocaleString('es-AR') } } }
+    }
+  });
+}
+
+/* ═══════════════════════════════════════
+   RECALCULATE
+═══════════════════════════════════════ */
+function recalculate() {
+  const funds  = getFunds();
+  const stocks = getStocks();
+
+  const fciTotal   = funds.reduce((s, f) => s + f.amount, 0);
+  const stocksVal  = stocks.reduce((s, st) => s + st.qty * st.curPrice, 0);
+  const totalCap   = fciTotal + stocksVal;
+
+  const tna  = weightedTNA(funds);
+  const mr   = fciTotal > 0 ? Math.pow(1 + tna, 1/12) - 1 : 0;
+  const proj6  = fciTotal * Math.pow(1 + tna, HORIZON_MOS / 12);
+  const gain6  = proj6 - fciTotal;
+  const gain1m = fciTotal * mr;
+
+  // % cartera por fondo
+  FUNDS.forEach(f => {
+    const el = document.getElementById('pct-' + f.id);
+    if (!el) return;
+    const amt = parseFloat(document.getElementById('inp-amount-' + f.id).value) || 0;
+    el.textContent = fciTotal > 0 ? ((amt / fciTotal) * 100).toFixed(1) + '%' : '0%';
+  });
+
+  // Actualizar valores de acciones en tabla
+  stocks.forEach(s => {
+    const val = s.qty * s.curPrice;
+    const pnl = val - s.qty * s.buyPrice;
+    const pnlPct = s.buyPrice > 0 ? ((s.curPrice / s.buyPrice - 1) * 100).toFixed(2) : '0.00';
+    const cls  = pnl >= 0 ? 'pnl-pos' : 'pnl-neg';
+    const sign = pnl >= 0 ? '+' : '';
+    const valEl = document.getElementById('val-' + s.id);
+    const pnlEl = document.getElementById('pnl-' + s.id);
+    if (valEl) valEl.textContent = '$' + Math.round(val).toLocaleString('es-AR');
+    if (pnlEl) {
+      pnlEl.textContent = `${sign}$${Math.round(pnl).toLocaleString('es-AR')} (${sign}${pnlPct}%)`;
+      pnlEl.className = 'col-pnl ' + cls;
+    }
+  });
+
+  // KPI capital total
+  document.getElementById('kpi-capital').textContent = fmt(totalCap);
+  document.getElementById('kpi-capital-sub').textContent =
+    'FCI $' + Math.round(fciTotal/1000) + 'k + Acciones $' + Math.round(stocksVal/1000) + 'k';
+
+  // KPI proyección FCI
+  document.getElementById('kpi-proj6').textContent = fmt(proj6);
+  document.getElementById('kpi-proj6-gain').textContent =
+    '+' + (currency === 'USD' ? 'USD ' + Math.round(gain6/tc()).toLocaleString('es-AR') : '$' + Math.round(gain6).toLocaleString('es-AR'));
+
+  // KPI mensual
+  document.getElementById('kpi-mes').textContent = fmt(gain1m);
+  document.getElementById('kpi-mes-pct').textContent = '+' + (mr * 100).toFixed(2) + '%';
+
+  // KPI TNA
+  document.getElementById('kpi-tna').textContent = (tna * 100).toFixed(2) + '%';
+
+  // KPI YPF
+  const ypf = stocks.find(s => s.id === 'ypf');
+  if (ypf) {
+    const ypfVal = ypf.qty * ypf.curPrice;
+    const ypfPnl = ypfVal - ypf.qty * ypf.buyPrice;
+    const ypfPct = ypf.buyPrice > 0 ? ((ypf.curPrice / ypf.buyPrice - 1) * 100).toFixed(2) : '0.00';
+    const isPos  = ypfPnl >= 0;
+    document.getElementById('kpi-ypf-val').textContent = fmt(ypfVal);
+    document.getElementById('kpi-ypf-val').className = 'kpi-value ' + (isPos ? 'green' : 'red');
+    document.getElementById('kpi-ypf-sub').textContent =
+      `${ypf.qty} acción · compra $${ypf.buyPrice.toLocaleString('es-AR')} · actual $${ypf.curPrice.toLocaleString('es-AR')}`;
+    const badge = document.getElementById('kpi-ypf-badge');
+    const sign = isPos ? '+' : '';
+    badge.textContent = `${sign}$${Math.round(ypfPnl).toLocaleString('es-AR')} (${sign}${ypfPct}%)`;
+    badge.className = 'kpi-badge ' + (isPos ? 'green' : 'red');
+  }
+
+  // Donut — FCI + YPF
+  const donutLabels = [...funds.map(f => f.label), ...stocks.filter(s => s.qty > 0).map(s => s.ticker)];
+  const donutData   = [
+    ...funds.map(f => f.amount / totalCap),
+    ...stocks.filter(s => s.qty > 0).map(s => (s.qty * s.curPrice) / totalCap),
+  ];
+  const donutColors = [...funds.map(f => f.color), ...stocks.map(s => s.color)];
+  chartDonut.data.labels = donutLabels;
+  chartDonut.data.datasets[0].data = donutData;
+  chartDonut.data.datasets[0].backgroundColor = donutColors;
+  chartDonut.update();
+
+  // Line projection (solo FCI)
+  const div  = currency === 'USD' ? tc() : 1;
+  const base    = projectSeries(fciTotal, tna, HORIZON_MOS);
+  const conserv = projectSeries(fciTotal, tna * 0.85, HORIZON_MOS);
+  const optim   = projectSeries(fciTotal, tna * 1.15, HORIZON_MOS);
+  chartLine.data.datasets[0].data = conserv.map(v => v / div);
+  chartLine.data.datasets[1].data = base.map(v => v / div);
+  chartLine.data.datasets[2].data = optim.map(v => v / div);
+  chartLine.update();
+
+  // Bars
+  chartBars.data.datasets[0].data = FUNDS.map(f =>
+    parseFloat(document.getElementById('inp-tna-' + f.id).value) || 0
+  );
+  chartBars.update();
+
+  document.getElementById('last-update').textContent =
+    'Actualizado: ' + new Date().toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' });
+}
+
+function setCurrency(cur) {
+  currency = cur;
+  document.getElementById('btn-ars').classList.toggle('active', cur === 'ARS');
+  document.getElementById('btn-usd').classList.toggle('active', cur === 'USD');
+  recalculate();
+}
+
+/* ═══════════════════════════════════════
+   BOOT
+═══════════════════════════════════════ */
+buildFundRows();
+buildStockRows();
+buildMovements();
+initCharts();
+recalculate();
+</script>
+</body>
+</html>
