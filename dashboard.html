@@ -7,132 +7,183 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1/dist/chart.umd.min.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
     :root {
-      --bg:        #0f1117;
-      --surface:   #1a1d27;
-      --surface2:  #22263a;
-      --border:    rgba(255,255,255,0.07);
-      --text:      #e2e8f0;
-      --muted:     #8892a4;
-      --green:     #4ade80;
-      --green-dim: rgba(74,222,128,0.12);
-      --orange:    #fb923c;
-      --orange-dim:rgba(251,146,60,0.12);
-      --blue:      #60a5fa;
-      --purple:    #a78bfa;
-      --accent:    #6366f1;
-      --red:       #f87171;
-      --red-dim:   rgba(248,113,113,0.12);
-      --yellow:    #facc15;
+      --bg:#0f1117; --surface:#1a1d27; --surface2:#22263a;
+      --border:rgba(255,255,255,0.07); --text:#e2e8f0; --muted:#8892a4;
+      --green:#4ade80; --green-dim:rgba(74,222,128,0.12);
+      --orange:#fb923c; --orange-dim:rgba(251,146,60,0.12);
+      --blue:#60a5fa; --blue-dim:rgba(96,165,250,0.12);
+      --purple:#a78bfa; --accent:#6366f1;
+      --red:#f87171; --red-dim:rgba(248,113,113,0.12);
+      --yellow:#facc15; --yellow-dim:rgba(250,204,21,0.12);
     }
+    body { font-family:'Inter',system-ui,sans-serif; background:var(--bg); color:var(--text); padding:20px; }
 
-    body { font-family: 'Inter', system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; padding: 24px; }
+    /* DOLAR STRIP */
+    .dolar-strip {
+      display:flex; gap:8px; flex-wrap:wrap; align-items:center;
+      background:var(--surface); border:1px solid var(--border);
+      border-radius:12px; padding:10px 16px; margin-bottom:18px;
+    }
+    .dolar-strip .strip-label { font-size:.7rem; color:var(--muted); text-transform:uppercase; letter-spacing:.08em; margin-right:4px; }
+    .dolar-pill {
+      display:flex; align-items:center; gap:6px;
+      background:var(--surface2); border:1px solid var(--border);
+      border-radius:8px; padding:4px 12px; font-size:.8rem;
+    }
+    .dolar-pill .name { color:var(--muted); font-size:.7rem; }
+    .dolar-pill .val  { font-weight:700; color:var(--text); }
+    .dolar-pill .val.blue { color:var(--blue); }
+    .dolar-pill .val.green{ color:var(--green); }
+    .strip-right { margin-left:auto; display:flex; align-items:center; gap:8px; }
+    .strip-time  { font-size:.7rem; color:var(--muted); }
+    .dot-live    { width:6px; height:6px; border-radius:50%; background:var(--green); animation:pulse 2s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+    /* ALERT BANNER */
+    .alert-banner {
+      display:none; align-items:center; gap:10px;
+      border-radius:10px; padding:10px 16px; margin-bottom:18px;
+      font-size:.82rem; font-weight:600; border:1px solid;
+    }
+    .alert-banner.warn  { background:var(--orange-dim); border-color:var(--orange); color:var(--orange); display:flex; }
+    .alert-banner.stale { background:var(--yellow-dim); border-color:var(--yellow); color:var(--yellow); display:flex; }
+    .alert-banner.ok    { background:var(--green-dim);  border-color:var(--green);  color:var(--green);  display:flex; }
 
     /* HEADER */
-    header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 28px; }
-    .header-left h1 { font-size: 1.45rem; font-weight: 700; letter-spacing: -0.02em; }
-    .header-left .sub { font-size: 0.78rem; color: var(--muted); margin-top: 3px; display: flex; gap: 10px; flex-wrap: wrap; }
-    .header-left .sub span { background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 2px 8px; }
-    .header-right { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-    .toggle-group { display: flex; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
-    .toggle-group button { background: none; border: none; color: var(--muted); padding: 6px 16px; font-size: 0.8rem; cursor: pointer; transition: background .15s, color .15s; }
-    .toggle-group button.active { background: var(--accent); color: #fff; }
-    .btn { background: var(--accent); color: #fff; border: none; border-radius: 8px; padding: 8px 16px; font-size: 0.82rem; font-weight: 600; cursor: pointer; transition: opacity .2s; }
-    .btn:hover { opacity: .85; }
+    header { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-bottom:20px; }
+    .header-left h1 { font-size:1.4rem; font-weight:700; letter-spacing:-.02em; }
+    .header-left .sub { font-size:.76rem; color:var(--muted); margin-top:3px; display:flex; gap:8px; flex-wrap:wrap; }
+    .header-left .sub span { background:var(--surface2); border:1px solid var(--border); border-radius:6px; padding:2px 8px; }
+    .header-right { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+    .toggle-group { display:flex; background:var(--surface2); border:1px solid var(--border); border-radius:8px; overflow:hidden; }
+    .toggle-group button { background:none; border:none; color:var(--muted); padding:6px 14px; font-size:.78rem; cursor:pointer; transition:background .15s,color .15s; }
+    .toggle-group button.active { background:var(--accent); color:#fff; }
+    .btn { background:var(--accent); color:#fff; border:none; border-radius:8px; padding:7px 14px; font-size:.78rem; font-weight:600; cursor:pointer; transition:opacity .2s; white-space:nowrap; }
+    .btn:hover { opacity:.85; }
+    .btn-sm { padding:5px 10px; font-size:.72rem; }
+    .btn-outline { background:transparent; border:1px solid var(--border); color:var(--muted); }
+    .btn-outline:hover { background:var(--surface2); color:var(--text); }
 
     /* CARDS */
-    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 18px 20px; }
-    .card-title { font-size: 0.7rem; text-transform: uppercase; letter-spacing: .09em; color: var(--muted); margin-bottom: 10px; font-weight: 600; }
+    .card { background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:16px 18px; }
+    .card-title { font-size:.68rem; text-transform:uppercase; letter-spacing:.09em; color:var(--muted); margin-bottom:10px; font-weight:600; }
 
-    /* KPI GRID */
-    .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(185px, 1fr)); gap: 14px; margin-bottom: 24px; }
-    .kpi-value { font-size: 1.6rem; font-weight: 700; letter-spacing: -0.03em; line-height: 1; }
-    .kpi-value.green  { color: var(--green); }
-    .kpi-value.orange { color: var(--orange); }
-    .kpi-value.blue   { color: var(--blue); }
-    .kpi-value.red    { color: var(--red); }
-    .kpi-sub { font-size: 0.74rem; color: var(--muted); margin-top: 6px; }
-    .kpi-badge { display: inline-block; margin-top: 8px; padding: 2px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 600; }
-    .kpi-badge.green  { background: var(--green-dim);  color: var(--green); }
-    .kpi-badge.orange { background: var(--orange-dim); color: var(--orange); }
-    .kpi-badge.blue   { background: rgba(96,165,250,.12); color: var(--blue); }
-    .kpi-badge.red    { background: var(--red-dim);    color: var(--red); }
+    /* KPI */
+    .kpi-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:12px; margin-bottom:20px; }
+    .kpi-value { font-size:1.5rem; font-weight:700; letter-spacing:-.03em; line-height:1; }
+    .kpi-value.green  { color:var(--green); }
+    .kpi-value.orange { color:var(--orange); }
+    .kpi-value.blue   { color:var(--blue); }
+    .kpi-value.red    { color:var(--red); }
+    .kpi-value.yellow { color:var(--yellow); }
+    .kpi-sub { font-size:.72rem; color:var(--muted); margin-top:5px; }
+    .kpi-badge { display:inline-block; margin-top:7px; padding:2px 9px; border-radius:20px; font-size:.68rem; font-weight:600; }
+    .kpi-badge.green  { background:var(--green-dim);  color:var(--green); }
+    .kpi-badge.orange { background:var(--orange-dim); color:var(--orange); }
+    .kpi-badge.blue   { background:var(--blue-dim);   color:var(--blue); }
+    .kpi-badge.red    { background:var(--red-dim);    color:var(--red); }
+    .kpi-badge.yellow { background:var(--yellow-dim); color:var(--yellow); }
 
-    /* INPUTS — FCI */
-    .inputs-section { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 18px 20px; margin-bottom: 18px; }
-    .inputs-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
-    .inputs-header h2 { font-size: 0.78rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
-    .tna-note { font-size: 0.7rem; color: var(--orange); background: var(--orange-dim); border-radius: 6px; padding: 2px 8px; }
+    /* INPUTS */
+    .section { background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:16px 18px; margin-bottom:16px; }
+    .section-header { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; margin-bottom:12px; }
+    .section-header h2 { font-size:.74rem; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.08em; }
+    .warn-note  { font-size:.68rem; color:var(--orange); background:var(--orange-dim); border-radius:6px; padding:2px 8px; }
+    .stale-note { font-size:.68rem; color:var(--yellow); background:var(--yellow-dim); border-radius:6px; padding:2px 8px; display:none; }
 
-    .fund-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
-    .fund-table thead th { text-align: left; padding: 6px 10px; font-size: 0.68rem; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); border-bottom: 1px solid var(--border); }
-    .fund-table tbody tr { border-bottom: 1px solid var(--border); }
-    .fund-table tbody tr:last-child { border-bottom: none; }
-    .fund-table tbody td { padding: 8px 10px; vertical-align: middle; }
-    .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
-    .fund-table input[type="number"] { background: var(--bg); border: 1px solid var(--border); border-radius: 7px; color: var(--text); padding: 5px 8px; font-size: 0.82rem; text-align: right; width: 100%; }
-    .fund-table input[type="number"]:focus { outline: none; border-color: var(--accent); }
-    .col-amount { width: 155px; }
-    .col-tna    { width: 85px; }
-    .col-pct    { width: 75px; text-align: right; color: var(--muted); font-size: 0.75rem; }
+    .fund-table, .stock-table, .infl-table { width:100%; border-collapse:collapse; font-size:.8rem; }
+    .fund-table thead th, .stock-table thead th, .infl-table thead th {
+      text-align:left; padding:5px 8px; font-size:.65rem;
+      text-transform:uppercase; letter-spacing:.07em; color:var(--muted);
+      border-bottom:1px solid var(--border);
+    }
+    .fund-table tbody tr, .stock-table tbody tr, .infl-table tbody tr { border-bottom:1px solid var(--border); }
+    .fund-table tbody tr:last-child, .stock-table tbody tr:last-child, .infl-table tbody tr:last-child { border-bottom:none; }
+    .fund-table tbody td, .stock-table tbody td, .infl-table tbody td { padding:7px 8px; vertical-align:middle; }
+    input[type="number"] {
+      background:var(--bg); border:1px solid var(--border); border-radius:7px;
+      color:var(--text); padding:4px 7px; font-size:.8rem; text-align:right; width:100%;
+    }
+    input[type="number"]:focus { outline:none; border-color:var(--accent); }
+    .dot { width:9px; height:9px; border-radius:50%; display:inline-block; flex-shrink:0; }
+    .col-amt  { width:140px; }
+    .col-tna  { width:80px; }
+    .col-pct  { width:70px; text-align:right; color:var(--muted); font-size:.72rem; }
+    .col-qty  { width:65px; }
+    .col-buy  { width:120px; }
+    .col-cur  { width:130px; }
+    .col-val  { width:120px; font-weight:600; }
+    .col-pnl  { width:140px; font-weight:600; }
+    .pnl-pos  { color:var(--green); }
+    .pnl-neg  { color:var(--red); }
+    .col-infl { width:80px; }
+    .live-badge { font-size:.62rem; padding:1px 6px; border-radius:10px; background:var(--green-dim); color:var(--green); font-weight:600; }
+    .fetch-btn  { font-size:.7rem; padding:3px 8px; border-radius:6px; background:var(--surface2); border:1px solid var(--border); color:var(--muted); cursor:pointer; }
+    .fetch-btn:hover { color:var(--text); background:var(--surface); }
 
-    /* INPUTS — ACCIONES */
-    .stocks-section { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 18px 20px; margin-bottom: 18px; }
-    .stocks-section h2 { font-size: 0.78rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; margin-bottom: 14px; }
-    .stock-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
-    .stock-table thead th { text-align: left; padding: 6px 10px; font-size: 0.68rem; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); border-bottom: 1px solid var(--border); }
-    .stock-table tbody tr { border-bottom: 1px solid var(--border); }
-    .stock-table tbody tr:last-child { border-bottom: none; }
-    .stock-table tbody td { padding: 9px 10px; vertical-align: middle; }
-    .stock-table input[type="number"] { background: var(--bg); border: 1px solid var(--border); border-radius: 7px; color: var(--text); padding: 5px 8px; font-size: 0.82rem; text-align: right; width: 100%; }
-    .stock-table input[type="number"]:focus { outline: none; border-color: var(--accent); }
-    .col-qty    { width: 70px; }
-    .col-price  { width: 130px; }
-    .col-cur    { width: 130px; }
-    .col-val    { width: 130px; font-weight: 600; }
-    .col-pnl    { width: 110px; font-weight: 600; }
-    .pnl-pos    { color: var(--green); }
-    .pnl-neg    { color: var(--red); }
-
-    .usd-row { display: flex; align-items: center; gap: 10px; margin-top: 14px; flex-wrap: wrap; border-top: 1px solid var(--border); padding-top: 14px; }
-    .usd-row label { font-size: 0.8rem; color: var(--muted); }
-    .usd-row input { width: 130px; background: var(--bg); border: 1px solid var(--border); border-radius: 7px; color: var(--text); padding: 5px 8px; font-size: 0.82rem; text-align: right; }
-    .usd-row input:focus { outline: none; border-color: var(--accent); }
+    .usd-row { display:flex; align-items:center; gap:10px; margin-top:12px; flex-wrap:wrap; border-top:1px solid var(--border); padding-top:12px; }
+    .usd-row label { font-size:.78rem; color:var(--muted); }
+    .usd-row input { width:120px; }
 
     /* CHARTS */
-    .charts-grid        { display: grid; grid-template-columns: 1fr 2fr; gap: 14px; margin-bottom: 24px; }
-    .charts-grid-bottom { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 24px; }
-    @media (max-width: 860px) { .charts-grid, .charts-grid-bottom { grid-template-columns: 1fr; } }
-    .chart-wrap      { position: relative; height: 230px; }
-    .chart-wrap-tall { position: relative; height: 270px; }
+    .charts-grid        { display:grid; grid-template-columns:1fr 2fr; gap:12px; margin-bottom:20px; }
+    .charts-grid-bottom { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:20px; }
+    @media(max-width:860px){ .charts-grid,.charts-grid-bottom { grid-template-columns:1fr; } }
+    .chart-wrap      { position:relative; height:220px; }
+    .chart-wrap-tall { position:relative; height:260px; }
 
     /* TABLE MOV */
-    .table-wrapper { overflow-x: auto; }
-    table.mov-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
-    table.mov-table thead th { text-align: left; padding: 9px 14px; font-size: 0.68rem; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); border-bottom: 1px solid var(--border); }
-    table.mov-table tbody tr { border-bottom: 1px solid var(--border); transition: background .1s; }
-    table.mov-table tbody tr:last-child { border-bottom: none; }
-    table.mov-table tbody tr:hover { background: var(--surface2); }
-    table.mov-table tbody td { padding: 10px 14px; }
-    .pill { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 600; }
-    .pill-green  { background: var(--green-dim);  color: var(--green); }
-    .pill-orange { background: var(--orange-dim); color: var(--orange); }
-    .pill-blue   { background: rgba(96,165,250,.12); color: var(--blue); }
+    .table-wrapper { overflow-x:auto; }
+    table.mov-table { width:100%; border-collapse:collapse; font-size:.8rem; }
+    table.mov-table thead th { text-align:left; padding:8px 12px; font-size:.65rem; text-transform:uppercase; letter-spacing:.07em; color:var(--muted); border-bottom:1px solid var(--border); }
+    table.mov-table tbody tr { border-bottom:1px solid var(--border); transition:background .1s; }
+    table.mov-table tbody tr:last-child { border-bottom:none; }
+    table.mov-table tbody tr:hover { background:var(--surface2); }
+    table.mov-table tbody td { padding:9px 12px; }
+    .pill { display:inline-block; padding:2px 9px; border-radius:20px; font-size:.68rem; font-weight:600; }
+    .pill-green  { background:var(--green-dim);  color:var(--green); }
+    .pill-orange { background:var(--orange-dim); color:var(--orange); }
+    .pill-blue   { background:var(--blue-dim);   color:var(--blue); }
+
+    /* INFLATION SECTION */
+    .infl-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:20px; }
+    @media(max-width:700px){ .infl-grid { grid-template-columns:1fr; } }
+    .real-return-bar { display:flex; align-items:center; gap:8px; margin-top:12px; flex-wrap:wrap; }
+    .bar-track { flex:1; background:var(--surface2); border-radius:6px; height:8px; min-width:120px; overflow:hidden; }
+    .bar-fill  { height:100%; border-radius:6px; transition:width .4s; }
 
     @media print {
-      body { background: #fff; color: #000; padding: 0; }
-      .card, .inputs-section, .stocks-section { border: 1px solid #ccc; background: #fff; }
-      .btn, .toggle-group { display: none; }
+      body { background:#fff; color:#000; padding:0; }
+      .card,.section,.dolar-strip { border:1px solid #ccc; background:#fff; }
+      .btn,.toggle-group,.fetch-btn { display:none; }
     }
   </style>
 </head>
 <body>
 
+<!-- DOLAR LIVE STRIP -->
+<div class="dolar-strip">
+  <span class="strip-label">Dólar</span>
+  <div class="dolar-pill"><span class="name">Oficial</span><span class="val" id="d-oficial">—</span></div>
+  <div class="dolar-pill"><span class="name">Blue</span><span class="val blue" id="d-blue">—</span></div>
+  <div class="dolar-pill"><span class="name">MEP</span><span class="val green" id="d-mep">—</span></div>
+  <div class="dolar-pill"><span class="name">CCL</span><span class="val green" id="d-ccl">—</span></div>
+  <div class="strip-right">
+    <span class="dot-live"></span>
+    <span class="strip-time" id="dolar-time">Cargando…</span>
+    <button class="btn btn-sm btn-outline" onclick="fetchDolar()">↻ Actualizar</button>
+  </div>
+</div>
+
+<!-- ALERT BANNERS -->
+<div class="alert-banner" id="alert-deviation">⚠ El capital real se desvió más del 5% de la proyección base.</div>
+<div class="alert-banner" id="alert-stale">🕐 Las TNAs no fueron actualizadas hace más de 7 días. Verificá en la app Uala.</div>
+
 <!-- HEADER -->
 <header>
   <div class="header-left">
-    <h1>Portfolio Personal · Uala + Acciones</h1>
+    <h1>Portfolio Franco · Uala + Acciones</h1>
     <div class="sub">
       <span>Inicio: 5 Jun 2026</span>
       <span>Horizonte FCI: 6 meses</span>
@@ -143,48 +194,50 @@
   <div class="header-right">
     <div class="toggle-group">
       <button id="btn-ars" class="active" onclick="setCurrency('ARS')">ARS</button>
-      <button id="btn-usd" onclick="setCurrency('USD')">USD</button>
+      <button id="btn-usd-of" onclick="setCurrency('USD_OF')">USD Oficial</button>
+      <button id="btn-usd-mep" onclick="setCurrency('USD_MEP')">USD MEP</button>
     </div>
-    <button class="btn" onclick="window.print()">⬇ PDF</button>
+    <button class="btn btn-sm" onclick="exportCSV()">⬇ CSV</button>
+    <button class="btn btn-sm" onclick="window.print()">⬇ PDF</button>
   </div>
 </header>
 
 <!-- FCI INPUTS -->
-<div class="inputs-section">
-  <div class="inputs-header">
+<div class="section">
+  <div class="section-header">
     <h2>FCI Uala · Montos y TNAs</h2>
-    <span class="tna-note">⚠ Actualizá las TNAs desde la app Uala antes de proyectar</span>
+    <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+      <span class="stale-note" id="stale-note">⚠ TNAs desactualizadas</span>
+      <span class="warn-note">Actualizá las TNAs desde la app Uala</span>
+      <button class="fetch-btn" onclick="markTNAUpdated()">✓ Marqué como actualizado</button>
+    </div>
   </div>
   <table class="fund-table">
-    <thead>
-      <tr>
-        <th></th><th>Fondo</th>
-        <th class="col-amount">Monto (ARS)</th>
-        <th class="col-tna">TNA %</th>
-        <th class="col-pct">% cartera</th>
-      </tr>
-    </thead>
+    <thead><tr><th></th><th>Fondo</th><th class="col-amt">Monto (ARS)</th><th class="col-tna">TNA %</th><th class="col-pct">% cartera</th></tr></thead>
     <tbody id="fund-rows"></tbody>
   </table>
   <div class="usd-row">
-    <label>Tipo de cambio USD/ARS:</label>
-    <input type="number" id="inp-tc" value="1200" min="1" step="10" oninput="recalculate()" />
+    <label>TC referencia (ARS/USD):</label>
+    <input type="number" id="inp-tc" value="1200" min="1" step="10" oninput="recalculate()" style="width:120px" />
+    <button class="fetch-btn" onclick="applyDolarOficial()">Usar dólar oficial</button>
+    <button class="fetch-btn" onclick="applyDolarMEP()">Usar dólar MEP</button>
   </div>
 </div>
 
 <!-- ACCIONES INPUTS -->
-<div class="stocks-section">
-  <h2>Acciones · Seguimiento de precio</h2>
+<div class="section">
+  <div class="section-header">
+    <h2>Acciones · Seguimiento</h2>
+    <button class="fetch-btn" onclick="fetchAllStocks()">↻ Actualizar precios</button>
+  </div>
   <table class="stock-table">
     <thead>
       <tr>
-        <th></th>
-        <th>Ticker</th>
-        <th>Empresa</th>
-        <th class="col-qty">Cantidad</th>
-        <th class="col-price">Precio compra (ARS)</th>
-        <th class="col-cur">Precio actual (ARS)</th>
-        <th class="col-val">Valor actual</th>
+        <th></th><th>Ticker</th><th>Empresa</th>
+        <th class="col-qty">Cant.</th>
+        <th class="col-buy">Compra (ARS)</th>
+        <th class="col-cur">Actual (ARS) <span class="live-badge">LIVE</span></th>
+        <th class="col-val">Valor</th>
         <th class="col-pnl">P&amp;L</th>
       </tr>
     </thead>
@@ -197,24 +250,24 @@
   <div class="card">
     <div class="card-title">Capital total</div>
     <div class="kpi-value" id="kpi-capital">—</div>
-    <div class="kpi-sub" id="kpi-capital-sub">FCI + Acciones</div>
+    <div class="kpi-sub" id="kpi-capital-sub">—</div>
   </div>
   <div class="card">
-    <div class="card-title">Proyección FCI · 5 Dic 2026</div>
+    <div class="card-title">Proyección 5 Dic 2026</div>
     <div class="kpi-value green" id="kpi-proj6">—</div>
     <div class="kpi-sub">Ganancia estimada (6 meses)</div>
-    <span class="kpi-badge green" id="kpi-proj6-gain">+$0</span>
+    <span class="kpi-badge green" id="kpi-proj6-gain">—</span>
   </div>
   <div class="card">
     <div class="card-title">Rendimiento mensual est.</div>
     <div class="kpi-value green" id="kpi-mes">—</div>
-    <div class="kpi-sub">Primer mes (Jun → Jul)</div>
-    <span class="kpi-badge green" id="kpi-mes-pct">+0%</span>
+    <div class="kpi-sub">Jun → Jul 2026</div>
+    <span class="kpi-badge green" id="kpi-mes-pct">—</span>
   </div>
   <div class="card">
-    <div class="card-title">TNA ponderada FCI</div>
+    <div class="card-title">TNA ponderada</div>
     <div class="kpi-value orange" id="kpi-tna">—</div>
-    <div class="kpi-sub">Promedio ponderado por monto</div>
+    <div class="kpi-sub">Promedio FCI</div>
     <span class="kpi-badge orange">Perfil medio</span>
   </div>
   <div class="card">
@@ -223,42 +276,77 @@
     <div class="kpi-sub" id="kpi-ypf-sub">1 acción · compra $83.000</div>
     <span class="kpi-badge" id="kpi-ypf-badge">—</span>
   </div>
+  <div class="card">
+    <div class="card-title">Retorno real vs inflación</div>
+    <div class="kpi-value" id="kpi-real">—</div>
+    <div class="kpi-sub" id="kpi-real-sub">TNA cartera − inflación anualizada</div>
+    <span class="kpi-badge" id="kpi-real-badge">—</span>
+  </div>
+  <div class="card">
+    <div class="card-title">Capital en USD MEP</div>
+    <div class="kpi-value blue" id="kpi-mep">—</div>
+    <div class="kpi-sub" id="kpi-mep-sub">Al tipo de cambio MEP</div>
+    <span class="kpi-badge blue" id="kpi-mep-badge">—</span>
+  </div>
 </div>
 
 <!-- CHARTS ROW 1 -->
 <div class="charts-grid">
   <div class="card">
-    <div class="card-title">Distribución del portfolio</div>
+    <div class="card-title">Distribución portfolio</div>
     <div class="chart-wrap"><canvas id="chart-donut"></canvas></div>
   </div>
   <div class="card">
-    <div class="card-title">Proyección FCI · Jun → Dic 2026</div>
+    <div class="card-title">Proyección FCI · Jun → Dic 2026 (vs inflación)</div>
     <div class="chart-wrap-tall"><canvas id="chart-line"></canvas></div>
   </div>
 </div>
 
-<!-- CHARTS ROW 2 -->
-<div class="charts-grid-bottom">
+<!-- INFLATION + CHARTS ROW 2 -->
+<div class="infl-grid">
   <div class="card">
-    <div class="card-title">TNA por fondo FCI</div>
-    <div class="chart-wrap"><canvas id="chart-bars"></canvas></div>
+    <div class="card-title" style="margin-bottom:10px">Inflación mensual · INDEC (editable)</div>
+    <table class="infl-table">
+      <thead><tr><th>Mes</th><th class="col-infl">% mensual</th></tr></thead>
+      <tbody id="infl-rows"></tbody>
+    </table>
+    <div style="margin-top:10px">
+      <div class="real-return-bar">
+        <span style="font-size:.72rem;color:var(--muted)">Cartera</span>
+        <div class="bar-track"><div class="bar-fill" id="bar-cartera" style="background:var(--green);width:0%"></div></div>
+        <span style="font-size:.72rem;color:var(--green);min-width:40px;text-align:right" id="bar-cartera-label">—</span>
+      </div>
+      <div class="real-return-bar" style="margin-top:6px">
+        <span style="font-size:.72rem;color:var(--muted)">Inflación</span>
+        <div class="bar-track"><div class="bar-fill" id="bar-infl" style="background:var(--red);width:0%"></div></div>
+        <span style="font-size:.72rem;color:var(--red);min-width:40px;text-align:right" id="bar-infl-label">—</span>
+      </div>
+    </div>
   </div>
   <div class="card">
-    <div class="card-title">Evolución real (historial)</div>
+    <div class="card-title">TNA por fondo</div>
+    <div class="chart-wrap"><canvas id="chart-bars"></canvas></div>
+  </div>
+</div>
+
+<div class="charts-grid-bottom">
+  <div class="card">
+    <div class="card-title">Evolución real (historial — completar mensualmente)</div>
     <div class="chart-wrap"><canvas id="chart-history"></canvas></div>
+  </div>
+  <div class="card">
+    <div class="card-title">Desvío real vs proyección</div>
+    <div class="chart-wrap"><canvas id="chart-deviation"></canvas></div>
   </div>
 </div>
 
 <!-- MOVIMIENTOS -->
 <div class="card">
-  <div class="card-title" style="margin-bottom:16px;">Movimientos</div>
+  <div class="card-title" style="margin-bottom:14px">Movimientos</div>
   <div class="table-wrapper">
     <table class="mov-table">
       <thead>
-        <tr>
-          <th>Fecha</th><th>Instrumento</th><th>Tipo</th>
-          <th>Monto (ARS)</th><th>Saldo acumulado</th>
-        </tr>
+        <tr><th>Fecha</th><th>Instrumento</th><th>Tipo</th><th>Monto (ARS)</th><th>Saldo acumulado</th></tr>
       </thead>
       <tbody id="mov-body"></tbody>
     </table>
@@ -266,84 +354,208 @@
 </div>
 
 <script>
-/* ═══════════════════════════════════════
+/* ═══════════════════════════════════════════
    CONFIG
-═══════════════════════════════════════ */
+═══════════════════════════════════════════ */
 const START_DATE  = new Date('2026-06-05');
 const HORIZON_MOS = 6;
 
 const FUNDS = [
-  { id: 'retorno',   label: 'Retorno Plus',     tna: 0.44, color: '#6366f1', amount: 510000 },
-  { id: 'ahorro',    label: 'Ahorro Plus',       tna: 0.28, color: '#4ade80', amount: 450000 },
-  { id: 'cobertura', label: 'Cobertura Plus',    tna: 0.29, color: '#fb923c', amount: 248000 },
-  { id: 'mm',        label: '24/7 Money Market', tna: 0.26, color: '#a78bfa', amount: 140000 },
+  { id:'retorno',   label:'Retorno Plus',     tna:0.44, color:'#6366f1', amount:510000 },
+  { id:'ahorro',    label:'Ahorro Plus',       tna:0.28, color:'#4ade80', amount:450000 },
+  { id:'cobertura', label:'Cobertura Plus',    tna:0.29, color:'#fb923c', amount:248000 },
+  { id:'mm',        label:'24/7 Money Market', tna:0.26, color:'#a78bfa', amount:140000 },
 ];
 
 const STOCKS = [
-  { id: 'ypf', ticker: 'YPF', company: 'YPF S.A.', qty: 1, buyPrice: 83000, curPrice: 83000, color: '#facc15' },
+  { id:'ypf', ticker:'YPF', company:'YPF S.A.', qty:1, buyPrice:83000, curPrice:83000, color:'#facc15' },
 ];
+
+// Inflación mensual INDEC — actualizar manualmente cada mes
+const INFLATION_MONTHS = [
+  { label:'Ene 26', val:2.4 },
+  { label:'Feb 26', val:2.2 },
+  { label:'Mar 26', val:3.1 },
+  { label:'Abr 26', val:2.8 },
+  { label:'May 26', val:2.5 },
+  { label:'Jun 26', val:null },
+];
+
+// Dolar rates (se actualizan con fetch)
+let dolarRates = { oficial:1200, blue:1200, mep:1200, ccl:1200 };
 
 let currency = 'ARS';
 
-/* ═══════════════════════════════════════
+/* ═══════════════════════════════════════════
    HELPERS
-═══════════════════════════════════════ */
-function addMonths(date, n) {
-  const d = new Date(date);
-  d.setMonth(d.getMonth() + n);
-  return d;
+═══════════════════════════════════════════ */
+function addMonths(d, n) {
+  const r = new Date(d); r.setMonth(r.getMonth() + n); return r;
 }
-
-function tc() { return parseFloat(document.getElementById('inp-tc').value) || 1200; }
-
+function tc() {
+  if (currency === 'USD_OF')  return dolarRates.oficial;
+  if (currency === 'USD_MEP') return dolarRates.mep;
+  return parseFloat(document.getElementById('inp-tc').value) || 1200;
+}
 function fmt(n) {
-  if (currency === 'USD') return 'USD ' + Math.round(n / tc()).toLocaleString('es-AR');
+  if (currency !== 'ARS') {
+    const label = currency === 'USD_MEP' ? 'MEP ' : 'USD ';
+    return label + Math.round(n / tc()).toLocaleString('es-AR');
+  }
   return '$' + Math.round(n).toLocaleString('es-AR');
 }
-
 function getFunds() {
   return FUNDS.map(f => ({
     ...f,
-    amount: parseFloat(document.getElementById('inp-amount-' + f.id).value) || 0,
-    tna:    (parseFloat(document.getElementById('inp-tna-' + f.id).value) || 0) / 100,
+    amount: parseFloat(document.getElementById('inp-amount-'+f.id).value) || 0,
+    tna:   (parseFloat(document.getElementById('inp-tna-'+f.id).value) || 0) / 100,
   })).filter(f => f.amount > 0);
 }
-
 function getStocks() {
   return STOCKS.map(s => ({
     ...s,
-    qty:      parseFloat(document.getElementById('inp-qty-'     + s.id).value) || 0,
-    buyPrice: parseFloat(document.getElementById('inp-buy-'     + s.id).value) || 0,
-    curPrice: parseFloat(document.getElementById('inp-cur-'     + s.id).value) || 0,
+    qty:      parseFloat(document.getElementById('inp-qty-'+s.id).value) || 0,
+    buyPrice: parseFloat(document.getElementById('inp-buy-'+s.id).value) || 0,
+    curPrice: parseFloat(document.getElementById('inp-cur-'+s.id).value) || 0,
   }));
 }
-
 function weightedTNA(funds) {
-  const total = funds.reduce((s, f) => s + f.amount, 0);
-  if (!total) return 0;
-  return funds.reduce((s, f) => s + (f.amount / total) * f.tna, 0);
+  const tot = funds.reduce((s,f) => s+f.amount, 0);
+  if (!tot) return 0;
+  return funds.reduce((s,f) => s+(f.amount/tot)*f.tna, 0);
 }
-
 function projectSeries(principal, annualRate, months) {
-  const mr = Math.pow(1 + annualRate, 1 / 12) - 1;
+  const mr = Math.pow(1+annualRate, 1/12) - 1;
   const out = [principal];
-  for (let m = 1; m <= months; m++) out.push(out[out.length - 1] * (1 + mr));
+  for (let m=1; m<=months; m++) out.push(out[out.length-1]*(1+mr));
   return out;
 }
+function getInflAnual() {
+  const vals = INFLATION_MONTHS.map(m => {
+    const el = document.getElementById('inp-infl-'+m.label.replace(' ',''));
+    return el ? parseFloat(el.value) || 0 : (m.val || 0);
+  }).filter(v => v > 0);
+  if (!vals.length) return 0.30;
+  const avgMonthly = vals.reduce((s,v) => s+v, 0) / vals.length / 100;
+  return Math.pow(1+avgMonthly, 12) - 1;
+}
 
-/* ═══════════════════════════════════════
+/* ═══════════════════════════════════════════
+   DOLAR FETCH
+═══════════════════════════════════════════ */
+async function fetchDolar() {
+  try {
+    document.getElementById('dolar-time').textContent = 'Actualizando…';
+    const res  = await fetch('https://dolarapi.com/v1/dolares');
+    const data = await res.json();
+    data.forEach(d => {
+      if (d.casa === 'oficial')          dolarRates.oficial = d.venta;
+      if (d.casa === 'blue')             dolarRates.blue    = d.venta;
+      if (d.casa === 'bolsa')            dolarRates.mep     = d.venta;
+      if (d.casa === 'contadoconliqui')  dolarRates.ccl     = d.venta;
+    });
+    document.getElementById('d-oficial').textContent = '$'+Math.round(dolarRates.oficial).toLocaleString('es-AR');
+    document.getElementById('d-blue').textContent    = '$'+Math.round(dolarRates.blue).toLocaleString('es-AR');
+    document.getElementById('d-mep').textContent     = '$'+Math.round(dolarRates.mep).toLocaleString('es-AR');
+    document.getElementById('d-ccl').textContent     = '$'+Math.round(dolarRates.ccl).toLocaleString('es-AR');
+    const now = new Date().toLocaleString('es-AR',{timeStyle:'short'});
+    document.getElementById('dolar-time').textContent = 'Hoy '+now;
+    // sync input TC con oficial por defecto
+    document.getElementById('inp-tc').value = Math.round(dolarRates.oficial);
+    recalculate();
+  } catch(e) {
+    document.getElementById('dolar-time').textContent = 'Error al cargar';
+  }
+}
+
+function applyDolarOficial() { document.getElementById('inp-tc').value = Math.round(dolarRates.oficial); recalculate(); }
+function applyDolarMEP()     { document.getElementById('inp-tc').value = Math.round(dolarRates.mep);     recalculate(); }
+
+/* ═══════════════════════════════════════════
+   STOCK FETCH
+═══════════════════════════════════════════ */
+async function fetchStock(stockId, ticker) {
+  const el = document.getElementById('inp-cur-'+stockId);
+  if (!el) return;
+  try {
+    const res  = await fetch('/api/stock?symbol='+ticker+'.BA');
+    const data = await res.json();
+    if (data.price) {
+      el.value = Math.round(data.price);
+      recalculate();
+    }
+  } catch(e) { console.warn('No se pudo actualizar '+ticker, e); }
+}
+
+async function fetchAllStocks() {
+  for (const s of STOCKS) await fetchStock(s.id, s.ticker);
+}
+
+/* ═══════════════════════════════════════════
+   TNA STALENESS
+═══════════════════════════════════════════ */
+const TNA_KEY = 'tna_updated_at';
+function markTNAUpdated() {
+  localStorage.setItem(TNA_KEY, Date.now());
+  checkTNAStaleness();
+}
+function checkTNAStaleness() {
+  const saved = localStorage.getItem(TNA_KEY);
+  if (!saved) return;
+  const days = (Date.now() - parseInt(saved)) / 86400000;
+  const note  = document.getElementById('stale-note');
+  const alert = document.getElementById('alert-stale');
+  if (days > 7) {
+    note.style.display = 'inline-block';
+    alert.classList.add('stale');
+    alert.textContent = `🕐 Las TNAs no se actualizaron hace ${Math.floor(days)} días. Verificá en la app Uala.`;
+  } else {
+    note.style.display = 'none';
+    alert.classList.remove('stale');
+    alert.style.display = 'none';
+  }
+}
+
+/* ═══════════════════════════════════════════
+   CSV EXPORT
+═══════════════════════════════════════════ */
+function exportCSV() {
+  const funds  = getFunds();
+  const stocks = getStocks();
+  const inflAnual = getInflAnual();
+  const tna = weightedTNA(funds);
+  const lines = [
+    ['Tipo','Instrumento','Monto ARS','TNA/Rendimiento %','Valor actual ARS'],
+    ...funds.map(f  => ['FCI', f.label, f.amount, (f.tna*100).toFixed(2), f.amount]),
+    ...stocks.map(s => ['Acción', s.ticker, s.qty*s.buyPrice, '—', s.qty*s.curPrice]),
+    [],
+    ['Métrica','Valor'],
+    ['TNA ponderada %',(tna*100).toFixed(2)],
+    ['Inflación anualizada %',(inflAnual*100).toFixed(2)],
+    ['Retorno real %',((tna-inflAnual)*100).toFixed(2)],
+    ['Dólar oficial',dolarRates.oficial],
+    ['Dólar MEP',dolarRates.mep],
+    ['Fecha','05/06/2026'],
+  ];
+  const csv = lines.map(r => r.join(',')).join('\n');
+  const blob = new Blob([csv], {type:'text/csv'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'portfolio_'+new Date().toISOString().slice(0,10)+'.csv';
+  a.click();
+}
+
+/* ═══════════════════════════════════════════
    BUILD ROWS
-═══════════════════════════════════════ */
+═══════════════════════════════════════════ */
 function buildFundRows() {
-  const tbody = document.getElementById('fund-rows');
-  tbody.innerHTML = FUNDS.map(f => {
-    const fciTotal = FUNDS.reduce((s, x) => s + x.amount, 0);
-    const pct = fciTotal > 0 ? ((f.amount / fciTotal) * 100).toFixed(1) : '0.0';
-    return `
-    <tr>
+  document.getElementById('fund-rows').innerHTML = FUNDS.map(f => {
+    const tot = FUNDS.reduce((s,x) => s+x.amount, 0);
+    const pct = tot > 0 ? ((f.amount/tot)*100).toFixed(1) : '0.0';
+    return `<tr>
       <td><span class="dot" style="background:${f.color}"></span></td>
-      <td style="font-size:.82rem">${f.label}</td>
-      <td class="col-amount"><input type="number" id="inp-amount-${f.id}" value="${f.amount}" min="0" step="1000" oninput="recalculate()" /></td>
+      <td>${f.label}</td>
+      <td class="col-amt"><input type="number" id="inp-amount-${f.id}" value="${f.amount}" min="0" step="1000" oninput="recalculate()" /></td>
       <td class="col-tna"><input type="number" id="inp-tna-${f.id}" value="${(f.tna*100).toFixed(1)}" min="0" max="200" step="0.1" oninput="recalculate()" /></td>
       <td class="col-pct" id="pct-${f.id}">${pct}%</td>
     </tr>`;
@@ -351,257 +563,319 @@ function buildFundRows() {
 }
 
 function buildStockRows() {
-  const tbody = document.getElementById('stock-rows');
-  tbody.innerHTML = STOCKS.map(s => {
-    const val = s.qty * s.curPrice;
-    const pnl = val - (s.qty * s.buyPrice);
-    const pnlPct = s.buyPrice > 0 ? ((s.curPrice / s.buyPrice - 1) * 100).toFixed(2) : '0.00';
-    const cls = pnl >= 0 ? 'pnl-pos' : 'pnl-neg';
-    const sign = pnl >= 0 ? '+' : '';
-    return `
-    <tr>
+  document.getElementById('stock-rows').innerHTML = STOCKS.map(s => {
+    const val = s.qty*s.curPrice;
+    const pnl = val - s.qty*s.buyPrice;
+    const pct = s.buyPrice > 0 ? ((s.curPrice/s.buyPrice-1)*100).toFixed(2) : '0.00';
+    const cls = pnl>=0 ? 'pnl-pos' : 'pnl-neg';
+    const sgn = pnl>=0 ? '+' : '';
+    return `<tr>
       <td><span class="dot" style="background:${s.color}"></span></td>
       <td><strong>${s.ticker}</strong></td>
-      <td style="color:var(--muted);font-size:.8rem">${s.company}</td>
+      <td style="color:var(--muted);font-size:.75rem">${s.company}</td>
       <td class="col-qty"><input type="number" id="inp-qty-${s.id}" value="${s.qty}" min="0" step="1" oninput="recalculate()" /></td>
-      <td class="col-price"><input type="number" id="inp-buy-${s.id}" value="${s.buyPrice}" min="0" step="100" oninput="recalculate()" /></td>
-      <td class="col-cur"><input type="number" id="inp-cur-${s.id}" value="${s.curPrice}" min="0" step="100" oninput="recalculate()" /></td>
+      <td class="col-buy"><input type="number" id="inp-buy-${s.id}" value="${s.buyPrice}" min="0" step="100" oninput="recalculate()" /></td>
+      <td class="col-cur">
+        <input type="number" id="inp-cur-${s.id}" value="${s.curPrice}" min="0" step="100" oninput="recalculate()" />
+      </td>
       <td class="col-val" id="val-${s.id}">$${Math.round(val).toLocaleString('es-AR')}</td>
-      <td class="col-pnl ${cls}" id="pnl-${s.id}">${sign}$${Math.round(pnl).toLocaleString('es-AR')} (${sign}${pnlPct}%)</td>
+      <td class="col-pnl ${cls}" id="pnl-${s.id}">${sgn}$${Math.round(pnl).toLocaleString('es-AR')} (${sgn}${pct}%)</td>
+    </tr>`;
+  }).join('');
+}
+
+function buildInflRows() {
+  document.getElementById('infl-rows').innerHTML = INFLATION_MONTHS.map(m => {
+    const id = 'inp-infl-'+m.label.replace(' ','');
+    const val = m.val !== null ? m.val : '';
+    const ph  = m.val === null ? '—' : '';
+    return `<tr>
+      <td style="font-size:.75rem;color:var(--muted)">${m.label}</td>
+      <td class="col-infl"><input type="number" id="${id}" value="${val}" placeholder="${ph}" min="0" max="50" step="0.1" oninput="recalculate()" /></td>
     </tr>`;
   }).join('');
 }
 
 function buildMovements() {
   const rows = [
-    { date: '05 jun 2026', inst: 'Retorno Plus',      tipo: 'FCI',    amount: 510000 },
-    { date: '05 jun 2026', inst: 'Ahorro Plus',        tipo: 'FCI',    amount: 450000 },
-    { date: '05 jun 2026', inst: 'Cobertura Plus',     tipo: 'FCI',    amount: 248000 },
-    { date: '05 jun 2026', inst: '24/7 Money Market',  tipo: 'FCI',    amount: 140000 },
-    { date: '05 jun 2026', inst: 'YPF (1 acción)',     tipo: 'Acción', amount: 83000  },
+    { date:'05 jun 2026', inst:'Retorno Plus',      tipo:'FCI',    amount:510000 },
+    { date:'05 jun 2026', inst:'Ahorro Plus',        tipo:'FCI',    amount:450000 },
+    { date:'05 jun 2026', inst:'Cobertura Plus',     tipo:'FCI',    amount:248000 },
+    { date:'05 jun 2026', inst:'24/7 Money Market',  tipo:'FCI',    amount:140000 },
+    { date:'05 jun 2026', inst:'YPF (1 acción)',     tipo:'Acción', amount:83000  },
   ];
   let acum = 0;
   document.getElementById('mov-body').innerHTML = rows.map(r => {
     acum += r.amount;
-    const pillClass = r.tipo === 'Acción' ? 'pill-blue' : 'pill-green';
-    return `
-    <tr>
-      <td>${r.date}</td>
-      <td>${r.inst}</td>
-      <td><span class="pill ${pillClass}">Suscripción</span></td>
+    const pc = r.tipo==='Acción' ? 'pill-blue' : 'pill-green';
+    return `<tr>
+      <td>${r.date}</td><td>${r.inst}</td>
+      <td><span class="pill ${pc}">Suscripción</span></td>
       <td>$${r.amount.toLocaleString('es-AR')}</td>
       <td>$${acum.toLocaleString('es-AR')}</td>
     </tr>`;
   }).join('');
 }
 
-/* ═══════════════════════════════════════
+/* ═══════════════════════════════════════════
    CHARTS
-═══════════════════════════════════════ */
+═══════════════════════════════════════════ */
 Chart.defaults.color = '#8892a4';
 Chart.defaults.borderColor = 'rgba(255,255,255,0.05)';
-Chart.defaults.font.family = "'Inter', system-ui, sans-serif";
+Chart.defaults.font.family = "'Inter',system-ui,sans-serif";
 
-let chartDonut, chartLine, chartBars, chartHistory;
+let chartDonut, chartLine, chartBars, chartHistory, chartDev;
 
 function initCharts() {
   chartDonut = new Chart(document.getElementById('chart-donut'), {
-    type: 'doughnut',
-    data: { labels: [], datasets: [{ data: [], backgroundColor: [], borderWidth: 2, borderColor: '#1a1d27', hoverOffset: 6 }] },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: {
-        legend: { position: 'bottom', labels: { boxWidth: 11, padding: 10, font: { size: 10 } } },
-        tooltip: { callbacks: { label: ctx => ' ' + ctx.label + ': ' + (ctx.parsed * 100).toFixed(1) + '%' } }
+    type:'doughnut',
+    data:{ labels:[], datasets:[{ data:[], backgroundColor:[], borderWidth:2, borderColor:'#1a1d27', hoverOffset:5 }] },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{
+        legend:{ position:'bottom', labels:{ boxWidth:10, padding:10, font:{size:10} } },
+        tooltip:{ callbacks:{ label: ctx => ' '+ctx.label+': '+(ctx.parsed*100).toFixed(1)+'%' } }
       },
-      cutout: '62%',
+      cutout:'63%',
     }
   });
 
-  const monthLabels = Array.from({ length: HORIZON_MOS + 1 }, (_, i) =>
-    addMonths(START_DATE, i).toLocaleDateString('es-AR', { day: '2-digit', month: 'short' })
+  const mLabels = Array.from({length:HORIZON_MOS+1},(_,i) =>
+    addMonths(START_DATE,i).toLocaleDateString('es-AR',{day:'2-digit',month:'short'})
   );
 
   chartLine = new Chart(document.getElementById('chart-line'), {
-    type: 'line',
-    data: {
-      labels: monthLabels,
-      datasets: [
-        { label: 'Conservador (−15%)', data: [], borderColor: '#fb923c', backgroundColor: 'rgba(251,146,60,0.04)', borderWidth: 1.5, borderDash: [4,3], pointRadius: 0, fill: false },
-        { label: 'Base',               data: [], borderColor: '#4ade80', backgroundColor: 'rgba(74,222,128,0.07)', borderWidth: 2, pointRadius: 3, pointBackgroundColor: '#4ade80', fill: true },
-        { label: 'Optimista (+15%)',   data: [], borderColor: '#60a5fa', backgroundColor: 'rgba(96,165,250,0.04)', borderWidth: 1.5, borderDash: [4,3], pointRadius: 0, fill: false },
+    type:'line',
+    data:{
+      labels: mLabels,
+      datasets:[
+        { label:'Conservador',   data:[], borderColor:'#fb923c', backgroundColor:'rgba(251,146,60,.04)', borderWidth:1.5, borderDash:[4,3], pointRadius:0, fill:false },
+        { label:'Base',          data:[], borderColor:'#4ade80', backgroundColor:'rgba(74,222,128,.07)', borderWidth:2, pointRadius:3, pointBackgroundColor:'#4ade80', fill:true },
+        { label:'Optimista',     data:[], borderColor:'#60a5fa', backgroundColor:'rgba(96,165,250,.04)', borderWidth:1.5, borderDash:[4,3], pointRadius:0, fill:false },
+        { label:'Si solo inflación', data:[], borderColor:'#f87171', backgroundColor:'transparent', borderWidth:1.5, borderDash:[2,4], pointRadius:0, fill:false },
       ]
     },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      interaction: { mode: 'index', intersect: false },
-      scales: {
-        x: { grid: { display: false } },
-        y: { ticks: { callback: v => currency === 'USD' ? 'U$S ' + Math.round(v / tc()) : '$' + (v/1000).toFixed(0) + 'k' } }
-      },
-      plugins: { legend: { labels: { boxWidth: 11, padding: 12, font: { size: 11 } } } }
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      interaction:{ mode:'index', intersect:false },
+      scales:{ x:{ grid:{display:false} }, y:{ ticks:{ callback: v => '$'+(v/1000).toFixed(0)+'k' } } },
+      plugins:{ legend:{ labels:{ boxWidth:10, padding:10, font:{size:10} } } }
     }
   });
 
   chartBars = new Chart(document.getElementById('chart-bars'), {
-    type: 'bar',
-    data: {
-      labels: FUNDS.map(f => f.label),
-      datasets: [{ label: 'TNA %', data: FUNDS.map(f => +(f.tna*100).toFixed(1)), backgroundColor: FUNDS.map(f => f.color + 'bb'), borderColor: FUNDS.map(f => f.color), borderWidth: 1.5, borderRadius: 6 }]
+    type:'bar',
+    data:{
+      labels: FUNDS.map(f=>f.label),
+      datasets:[{ label:'TNA %', data:FUNDS.map(f=>+(f.tna*100).toFixed(1)), backgroundColor:FUNDS.map(f=>f.color+'bb'), borderColor:FUNDS.map(f=>f.color), borderWidth:1.5, borderRadius:6 }]
     },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      scales: { x: { grid: { display: false }, ticks: { font: { size: 9 } } }, y: { ticks: { callback: v => v + '%' }, max: 70 } },
-      plugins: { legend: { display: false } }
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      scales:{ x:{ grid:{display:false}, ticks:{font:{size:9}} }, y:{ ticks:{ callback: v=>v+'%' }, max:70 } },
+      plugins:{ legend:{display:false} }
     }
   });
 
-  const histLabels = Array.from({ length: HORIZON_MOS + 1 }, (_, i) =>
-    addMonths(START_DATE, i).toLocaleDateString('es-AR', { day: '2-digit', month: 'short' })
+  const histLabels = Array.from({length:HORIZON_MOS+1},(_,i) =>
+    addMonths(START_DATE,i).toLocaleDateString('es-AR',{day:'2-digit',month:'short'})
   );
-
   chartHistory = new Chart(document.getElementById('chart-history'), {
-    type: 'line',
-    data: {
+    type:'line',
+    data:{
       labels: histLabels,
-      datasets: [{
-        label: 'Capital real ($)',
-        data: [1431000, null, null, null, null, null, null],
-        borderColor: '#a78bfa', backgroundColor: 'rgba(167,139,250,0.08)',
-        borderWidth: 2, pointRadius: 5, pointBackgroundColor: '#a78bfa',
-        fill: true, tension: 0.35, spanGaps: false,
+      datasets:[{
+        label:'Capital real ($)', data:[1431000,null,null,null,null,null,null],
+        borderColor:'#a78bfa', backgroundColor:'rgba(167,139,250,.08)',
+        borderWidth:2, pointRadius:5, pointBackgroundColor:'#a78bfa',
+        fill:true, tension:.35, spanGaps:false,
       }]
     },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      scales: { x: { grid: { display: false } }, y: { ticks: { callback: v => v == null ? '' : '$' + (v/1000).toFixed(0) + 'k' } } },
-      plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ctx.raw == null ? 'Sin datos' : '$' + Math.round(ctx.raw).toLocaleString('es-AR') } } }
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      scales:{ x:{grid:{display:false}}, y:{ ticks:{ callback: v=>v==null?'':'$'+(v/1000).toFixed(0)+'k' } } },
+      plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label: ctx => ctx.raw==null?'Sin datos':'$'+Math.round(ctx.raw).toLocaleString('es-AR') } } }
+    }
+  });
+
+  chartDev = new Chart(document.getElementById('chart-deviation'), {
+    type:'bar',
+    data:{
+      labels: histLabels,
+      datasets:[
+        { label:'Proyectado', data:[], backgroundColor:'rgba(99,102,241,.4)', borderColor:'#6366f1', borderWidth:1.5, borderRadius:4 },
+        { label:'Real',       data:[1431000,null,null,null,null,null,null], backgroundColor:'rgba(74,222,128,.4)', borderColor:'#4ade80', borderWidth:1.5, borderRadius:4 },
+      ]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      scales:{ x:{grid:{display:false}}, y:{ ticks:{ callback: v=>'$'+(v/1000).toFixed(0)+'k' } } },
+      plugins:{ legend:{ labels:{ boxWidth:10, padding:10, font:{size:10} } } }
     }
   });
 }
 
-/* ═══════════════════════════════════════
+/* ═══════════════════════════════════════════
    RECALCULATE
-═══════════════════════════════════════ */
+═══════════════════════════════════════════ */
 function recalculate() {
-  const funds  = getFunds();
-  const stocks = getStocks();
+  const funds     = getFunds();
+  const stocks    = getStocks();
+  const fciTotal  = funds.reduce((s,f) => s+f.amount, 0);
+  const stocksVal = stocks.reduce((s,st) => s+st.qty*st.curPrice, 0);
+  const totalCap  = fciTotal + stocksVal;
+  const tna       = weightedTNA(funds);
+  const mr        = fciTotal>0 ? Math.pow(1+tna,1/12)-1 : 0;
+  const proj6     = fciTotal * Math.pow(1+tna, HORIZON_MOS/12);
+  const gain6     = proj6 - fciTotal;
+  const gain1m    = fciTotal * mr;
+  const inflAnual = getInflAnual();
+  const realRet   = tna - inflAnual;
 
-  const fciTotal   = funds.reduce((s, f) => s + f.amount, 0);
-  const stocksVal  = stocks.reduce((s, st) => s + st.qty * st.curPrice, 0);
-  const totalCap   = fciTotal + stocksVal;
-
-  const tna  = weightedTNA(funds);
-  const mr   = fciTotal > 0 ? Math.pow(1 + tna, 1/12) - 1 : 0;
-  const proj6  = fciTotal * Math.pow(1 + tna, HORIZON_MOS / 12);
-  const gain6  = proj6 - fciTotal;
-  const gain1m = fciTotal * mr;
-
-  // % cartera por fondo
+  // % por fondo
   FUNDS.forEach(f => {
-    const el = document.getElementById('pct-' + f.id);
+    const el = document.getElementById('pct-'+f.id);
     if (!el) return;
-    const amt = parseFloat(document.getElementById('inp-amount-' + f.id).value) || 0;
-    el.textContent = fciTotal > 0 ? ((amt / fciTotal) * 100).toFixed(1) + '%' : '0%';
+    const amt = parseFloat(document.getElementById('inp-amount-'+f.id).value)||0;
+    el.textContent = fciTotal>0 ? ((amt/fciTotal)*100).toFixed(1)+'%' : '0%';
   });
 
-  // Actualizar valores de acciones en tabla
+  // Actualizar tabla acciones
   stocks.forEach(s => {
-    const val = s.qty * s.curPrice;
-    const pnl = val - s.qty * s.buyPrice;
-    const pnlPct = s.buyPrice > 0 ? ((s.curPrice / s.buyPrice - 1) * 100).toFixed(2) : '0.00';
-    const cls  = pnl >= 0 ? 'pnl-pos' : 'pnl-neg';
-    const sign = pnl >= 0 ? '+' : '';
-    const valEl = document.getElementById('val-' + s.id);
-    const pnlEl = document.getElementById('pnl-' + s.id);
-    if (valEl) valEl.textContent = '$' + Math.round(val).toLocaleString('es-AR');
-    if (pnlEl) {
-      pnlEl.textContent = `${sign}$${Math.round(pnl).toLocaleString('es-AR')} (${sign}${pnlPct}%)`;
-      pnlEl.className = 'col-pnl ' + cls;
-    }
+    const val  = s.qty*s.curPrice;
+    const pnl  = val - s.qty*s.buyPrice;
+    const pct  = s.buyPrice>0 ? ((s.curPrice/s.buyPrice-1)*100).toFixed(2) : '0.00';
+    const cls  = pnl>=0 ? 'pnl-pos' : 'pnl-neg';
+    const sgn  = pnl>=0 ? '+' : '';
+    const ve = document.getElementById('val-'+s.id);
+    const pe = document.getElementById('pnl-'+s.id);
+    if (ve) ve.textContent = '$'+Math.round(val).toLocaleString('es-AR');
+    if (pe) { pe.textContent=`${sgn}$${Math.round(pnl).toLocaleString('es-AR')} (${sgn}${pct}%)`; pe.className='col-pnl '+cls; }
   });
 
-  // KPI capital total
+  // KPI capital
   document.getElementById('kpi-capital').textContent = fmt(totalCap);
   document.getElementById('kpi-capital-sub').textContent =
-    'FCI $' + Math.round(fciTotal/1000) + 'k + Acciones $' + Math.round(stocksVal/1000) + 'k';
+    'FCI $'+Math.round(fciTotal/1000)+'k · Acciones $'+Math.round(stocksVal/1000)+'k';
 
-  // KPI proyección FCI
+  // KPI proyección
   document.getElementById('kpi-proj6').textContent = fmt(proj6);
-  document.getElementById('kpi-proj6-gain').textContent =
-    '+' + (currency === 'USD' ? 'USD ' + Math.round(gain6/tc()).toLocaleString('es-AR') : '$' + Math.round(gain6).toLocaleString('es-AR'));
+  document.getElementById('kpi-proj6-gain').textContent = '+$'+Math.round(gain6).toLocaleString('es-AR');
 
   // KPI mensual
   document.getElementById('kpi-mes').textContent = fmt(gain1m);
-  document.getElementById('kpi-mes-pct').textContent = '+' + (mr * 100).toFixed(2) + '%';
+  document.getElementById('kpi-mes-pct').textContent = '+'+( mr*100).toFixed(2)+'%';
 
   // KPI TNA
-  document.getElementById('kpi-tna').textContent = (tna * 100).toFixed(2) + '%';
+  document.getElementById('kpi-tna').textContent = (tna*100).toFixed(2)+'%';
 
   // KPI YPF
-  const ypf = stocks.find(s => s.id === 'ypf');
+  const ypf = stocks.find(s=>s.id==='ypf');
   if (ypf) {
-    const ypfVal = ypf.qty * ypf.curPrice;
-    const ypfPnl = ypfVal - ypf.qty * ypf.buyPrice;
-    const ypfPct = ypf.buyPrice > 0 ? ((ypf.curPrice / ypf.buyPrice - 1) * 100).toFixed(2) : '0.00';
-    const isPos  = ypfPnl >= 0;
-    document.getElementById('kpi-ypf-val').textContent = fmt(ypfVal);
-    document.getElementById('kpi-ypf-val').className = 'kpi-value ' + (isPos ? 'green' : 'red');
-    document.getElementById('kpi-ypf-sub').textContent =
-      `${ypf.qty} acción · compra $${ypf.buyPrice.toLocaleString('es-AR')} · actual $${ypf.curPrice.toLocaleString('es-AR')}`;
-    const badge = document.getElementById('kpi-ypf-badge');
-    const sign = isPos ? '+' : '';
-    badge.textContent = `${sign}$${Math.round(ypfPnl).toLocaleString('es-AR')} (${sign}${ypfPct}%)`;
-    badge.className = 'kpi-badge ' + (isPos ? 'green' : 'red');
+    const yVal = ypf.qty*ypf.curPrice;
+    const yPnl = yVal - ypf.qty*ypf.buyPrice;
+    const yPct = ypf.buyPrice>0 ? ((ypf.curPrice/ypf.buyPrice-1)*100).toFixed(2) : '0.00';
+    const pos  = yPnl>=0;
+    const sgn  = pos?'+':'';
+    document.getElementById('kpi-ypf-val').textContent = fmt(yVal);
+    document.getElementById('kpi-ypf-val').className   = 'kpi-value '+(pos?'green':'red');
+    document.getElementById('kpi-ypf-sub').textContent = `${ypf.qty} acción · compra $${ypf.buyPrice.toLocaleString('es-AR')} · actual $${ypf.curPrice.toLocaleString('es-AR')}`;
+    const b = document.getElementById('kpi-ypf-badge');
+    b.textContent = `${sgn}$${Math.round(yPnl).toLocaleString('es-AR')} (${sgn}${yPct}%)`;
+    b.className = 'kpi-badge '+(pos?'green':'red');
   }
 
-  // Donut — FCI + YPF
-  const donutLabels = [...funds.map(f => f.label), ...stocks.filter(s => s.qty > 0).map(s => s.ticker)];
-  const donutData   = [
-    ...funds.map(f => f.amount / totalCap),
-    ...stocks.filter(s => s.qty > 0).map(s => (s.qty * s.curPrice) / totalCap),
+  // KPI retorno real
+  document.getElementById('kpi-real').textContent = (realRet*100).toFixed(2)+'%';
+  document.getElementById('kpi-real').className   = 'kpi-value '+(realRet>=0?'green':'red');
+  document.getElementById('kpi-real-sub').textContent =
+    `TNA ${(tna*100).toFixed(1)}% − inflación ${(inflAnual*100).toFixed(1)}%`;
+  const rb = document.getElementById('kpi-real-badge');
+  rb.textContent = realRet>=0 ? 'Le ganás a la inflación ✓' : 'La inflación te supera ✗';
+  rb.className   = 'kpi-badge '+(realRet>=0?'green':'red');
+
+  // KPI MEP
+  document.getElementById('kpi-mep').textContent = 'MEP '+Math.round(totalCap/dolarRates.mep).toLocaleString('es-AR');
+  document.getElementById('kpi-mep-sub').textContent = `TC MEP $${Math.round(dolarRates.mep).toLocaleString('es-AR')}`;
+  document.getElementById('kpi-mep-badge').textContent = `CCL U$S ${Math.round(totalCap/dolarRates.ccl).toLocaleString('es-AR')}`;
+
+  // Barras inflación
+  const maxBar = Math.max(tna, inflAnual)*100;
+  document.getElementById('bar-cartera').style.width = maxBar>0 ? ((tna/inflAnual)*100).toFixed(0)+'%' : '0%';
+  document.getElementById('bar-cartera').style.width = '100%';
+  document.getElementById('bar-infl').style.width    = maxBar>0 ? ((inflAnual/tna)*100).toFixed(0)+'%' : '0%';
+  document.getElementById('bar-cartera-label').textContent = (tna*100).toFixed(1)+'%';
+  document.getElementById('bar-infl-label').textContent    = (inflAnual*100).toFixed(1)+'%';
+
+  // Alert desvío
+  const realData = chartHistory.data.datasets[0].data.filter(v=>v!==null);
+  const lastReal = realData[realData.length-1];
+  const baseAtSamePoint = projectSeries(fciTotal+stocksVal, tna, realData.length-1);
+  const expected = baseAtSamePoint[baseAtSamePoint.length-1];
+  const devPct   = lastReal && expected ? Math.abs(lastReal/expected-1) : 0;
+  const alertDev = document.getElementById('alert-deviation');
+  if (devPct > 0.05) {
+    alertDev.classList.add('warn');
+    alertDev.textContent = `⚠ El capital real se desvió un ${(devPct*100).toFixed(1)}% de la proyección base.`;
+  } else { alertDev.classList.remove('warn'); alertDev.style.display='none'; }
+
+  // Donut
+  const allAssets = [
+    ...funds.map(f => ({ label:f.label, val:f.amount, color:f.color })),
+    ...stocks.filter(s=>s.qty>0).map(s => ({ label:s.ticker, val:s.qty*s.curPrice, color:s.color })),
   ];
-  const donutColors = [...funds.map(f => f.color), ...stocks.map(s => s.color)];
-  chartDonut.data.labels = donutLabels;
-  chartDonut.data.datasets[0].data = donutData;
-  chartDonut.data.datasets[0].backgroundColor = donutColors;
+  chartDonut.data.labels = allAssets.map(a=>a.label);
+  chartDonut.data.datasets[0].data = allAssets.map(a=>a.val/totalCap);
+  chartDonut.data.datasets[0].backgroundColor = allAssets.map(a=>a.color);
   chartDonut.update();
 
-  // Line projection (solo FCI)
-  const div  = currency === 'USD' ? tc() : 1;
+  // Line projection
   const base    = projectSeries(fciTotal, tna, HORIZON_MOS);
-  const conserv = projectSeries(fciTotal, tna * 0.85, HORIZON_MOS);
-  const optim   = projectSeries(fciTotal, tna * 1.15, HORIZON_MOS);
-  chartLine.data.datasets[0].data = conserv.map(v => v / div);
-  chartLine.data.datasets[1].data = base.map(v => v / div);
-  chartLine.data.datasets[2].data = optim.map(v => v / div);
+  const conserv = projectSeries(fciTotal, tna*0.85, HORIZON_MOS);
+  const optim   = projectSeries(fciTotal, tna*1.15, HORIZON_MOS);
+  const inflSer = projectSeries(fciTotal, inflAnual, HORIZON_MOS);
+  chartLine.data.datasets[0].data = conserv;
+  chartLine.data.datasets[1].data = base;
+  chartLine.data.datasets[2].data = optim;
+  chartLine.data.datasets[3].data = inflSer;
   chartLine.update();
 
-  // Bars
+  // Bars TNA
   chartBars.data.datasets[0].data = FUNDS.map(f =>
-    parseFloat(document.getElementById('inp-tna-' + f.id).value) || 0
+    parseFloat(document.getElementById('inp-tna-'+f.id).value)||0
   );
   chartBars.update();
 
+  // Deviation chart — proyectado
+  chartDev.data.datasets[0].data = base;
+  chartDev.update();
+
   document.getElementById('last-update').textContent =
-    'Actualizado: ' + new Date().toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' });
+    'Actualizado: '+new Date().toLocaleString('es-AR',{dateStyle:'short',timeStyle:'short'});
 }
 
 function setCurrency(cur) {
   currency = cur;
-  document.getElementById('btn-ars').classList.toggle('active', cur === 'ARS');
-  document.getElementById('btn-usd').classList.toggle('active', cur === 'USD');
+  ['btn-ars','btn-usd-of','btn-usd-mep'].forEach(id => {
+    document.getElementById(id).classList.remove('active');
+  });
+  const map = { ARS:'btn-ars', USD_OF:'btn-usd-of', USD_MEP:'btn-usd-mep' };
+  document.getElementById(map[cur]).classList.add('active');
   recalculate();
 }
 
-/* ═══════════════════════════════════════
+/* ═══════════════════════════════════════════
    BOOT
-═══════════════════════════════════════ */
+═══════════════════════════════════════════ */
 buildFundRows();
 buildStockRows();
+buildInflRows();
 buildMovements();
 initCharts();
 recalculate();
+checkTNAStaleness();
+// Fetch automático al cargar
+fetchDolar();
+fetchAllStocks();
 </script>
 </body>
 </html>
